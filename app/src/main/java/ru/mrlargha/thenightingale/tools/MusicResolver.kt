@@ -2,6 +2,8 @@ package ru.mrlargha.thenightingale.tools
 
 import android.content.ContentUris
 import android.content.Context
+import android.media.MediaMetadata
+import android.media.browse.MediaBrowser
 import android.provider.MediaStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ru.mrlargha.thenightingale.data.models.MusicFileInfo
@@ -12,8 +14,7 @@ class MusicResolver @Inject constructor(@ApplicationContext private val context:
     fun resolveByContentResolver(): List<MusicFileInfo> {
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
-            MediaStore.Audio.Media.ARTIST,
-            MediaStore.Audio.Media.DISPLAY_NAME
+            MediaStore.Audio.Media.TITLE,
         )
 
         val query = context.contentResolver.query(
@@ -24,22 +25,17 @@ class MusicResolver @Inject constructor(@ApplicationContext private val context:
         query?.use { cursor ->
 
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
-            val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
-            val displayNameColumn =
-                cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
-//            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE)
+            val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
 
             val musicFiles = mutableListOf<MusicFileInfo>()
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
-                val artist = cursor.getString(artistColumn)
-                val displayName = cursor.getString(displayNameColumn)
-//                val size = cursor.getInt(sizeColumn)
-
+                val trackName = cursor.getString(artistColumn)
                 val contentUri =
                     ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
-                musicFiles.add(MusicFileInfo(displayName, artist, 0, contentUri))
+
+                musicFiles.add(MusicFileInfo(trackName, contentUri))
             }
             return musicFiles
         } ?: return emptyList()
