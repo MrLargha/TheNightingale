@@ -100,6 +100,7 @@
         app:layout_constraintTop_toBottomOf="@+id/progress" />
 
     <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/chart"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
