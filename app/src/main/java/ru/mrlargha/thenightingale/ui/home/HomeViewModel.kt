@@ -1,5 +1,6 @@
 package ru.mrlargha.thenightingale.ui.home
 
+import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -12,8 +13,7 @@ import ru.mrlargha.thenightingale.data.models.MusicFileInfo
 import ru.mrlargha.thenightingale.data.repos.MusicRepository
 import javax.inject.Inject
 
-@ActivityScoped
-class HomeViewModel @Inject constructor(private val musicRepository: MusicRepository) :
+class HomeViewModel @ViewModelInject constructor(private val musicRepository: MusicRepository) :
     ViewModel() {
     val musicFilesLiveData = MutableLiveData<List<MusicFileInfo>>()
 

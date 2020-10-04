@@ -30,4 +30,24 @@ data class MusicFileInfo(
         }
         return null
     }
+    companion object {
+        fun createByUri(uri: Uri, context: Context): MusicFileInfo {
+            if(uri == Uri.EMPTY)
+                return MusicFileInfo("UNKNOWN", uri, "UNKNOWN", 0)
+            MediaMetadataRetriever().apply {
+                setDataSource(context, uri)
+                val artist =
+                    extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST) ?: "UNKNOWN"
+
+                val duration =
+                    extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                        ?.toLong() ?: 0
+
+                val title = extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+                    ?: uri.toString()
+
+                return MusicFileInfo(title, uri, artist, duration)
+            }
+        }
+    }
 }

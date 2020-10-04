@@ -27,12 +27,7 @@ class MainActivity : AppCompatActivity() {
     private val requestPermissionLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
-        ) { isGranted: Boolean ->
-            if (isGranted) {
-                val music = musicRepository.getMusic()
-                val m = music
-            } else {
-            }
+        ) {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import ru.mrlargha.thenightingale.databinding.FragmentHomeBinding
@@ -18,7 +19,7 @@ class HomeFragment : Fragment() {
         const val TAG: String = "HomeFragment"
     }
 
-    @Inject lateinit var viewModel: HomeViewModel
+    private val viewModel: HomeViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -33,14 +34,13 @@ class HomeFragment : Fragment() {
         }
 
         subscribeUI(binding)
-        Log.d(TAG, "View created")
+
         return binding.root
     }
 
     private fun subscribeUI(binding: FragmentHomeBinding) {
         viewModel.musicFilesLiveData.observe(viewLifecycleOwner) {
             (binding.recyclerView.adapter as MusicFileAdapter).data = it
-            Log.d(TAG, "List changed!")
         }
     }
 

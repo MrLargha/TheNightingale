@@ -2,9 +2,7 @@ package ru.mrlargha.thenightingale.tools
 
 import android.content.ContentUris
 import android.content.Context
-import android.media.MediaMetadata
 import android.media.MediaMetadataRetriever
-import android.media.browse.MediaBrowser
 import android.provider.MediaStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ru.mrlargha.thenightingale.data.models.MusicFileInfo
@@ -15,7 +13,6 @@ class MusicResolver @Inject constructor(@ApplicationContext private val context:
     fun resolveByContentResolver(): List<MusicFileInfo> {
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
-            MediaStore.Audio.Media.TITLE,
         )
 
         val query = context.contentResolver.query(
@@ -24,29 +21,15 @@ class MusicResolver @Inject constructor(@ApplicationContext private val context:
         )
 
         query?.use { cursor ->
-
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
-            val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
 
             val musicFiles = mutableListOf<MusicFileInfo>()
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
-                val trackName = cursor.getString(artistColumn)
                 val contentUri =
                     ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
-
-                val mediaMetadataRetriever =
-                    MediaMetadataRetriever().apply { setDataSource(context, contentUri) }
-
-                val artist =
-                    mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
-
-                val duration =
-                    mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-                        ?.toLong() ?: 0
-
-                musicFiles.add(MusicFileInfo(trackName, contentUri, artist ?: "UNKNOWN", duration))
+                musicFiles.add(MusicFileInfo.createByUri(contentUri, context))
             }
             return musicFiles
         } ?: return emptyList()
