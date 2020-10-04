@@ -1,32 +1,33 @@
 package ru.mrlargha.thenightingale.data.models
 
+import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.media.ThumbnailUtils
+import android.media.MediaMetadataRetriever
 import android.net.Uri
-import androidx.room.Embedded
-import androidx.room.Entity
-import androidx.room.Ignore
 
-class IntensityRecord(
-    @Embedded
-    val trackInfo: MusicFileInfo,
-    val recordedDataUri: Uri
-) {
-}
+//class IntensityRecord(
+//    @Embedded
+//    val trackInfo: MusicFileInfo,
+//    val recordedDataUri: Uri
+//) {
+//}
 
 data class MusicFileInfo(
     val name: String,
     val contentUri: Uri,
-    val duration: Int = 0,
+    val artist: String,
+    val duration: Long = 0
 ) {
-    companion object {
-        @Ignore
-        private const val THUMB_SIZE = 64
-    }
+    val durationString = "${duration / 60000}:${duration % 60000 / 1000}"
 
-    fun loadThumbnail() =
-        ThumbnailUtils.extractThumbnail(
-            BitmapFactory.decodeFile(contentUri.encodedPath),
-            THUMB_SIZE, THUMB_SIZE
-        )
+    fun loadThumbnail(context: Context): Bitmap? {
+        MediaMetadataRetriever().apply {
+            setDataSource(context, contentUri)
+            embeddedPicture?.let {
+                return BitmapFactory.decodeByteArray(it, 0, it.size, BitmapFactory.Options())
+            }
+        }
+        return null
+    }
 }

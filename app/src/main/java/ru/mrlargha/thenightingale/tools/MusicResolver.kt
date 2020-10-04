@@ -3,6 +3,7 @@ package ru.mrlargha.thenightingale.tools
 import android.content.ContentUris
 import android.content.Context
 import android.media.MediaMetadata
+import android.media.MediaMetadataRetriever
 import android.media.browse.MediaBrowser
 import android.provider.MediaStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -35,7 +36,17 @@ class MusicResolver @Inject constructor(@ApplicationContext private val context:
                 val contentUri =
                     ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
 
-                musicFiles.add(MusicFileInfo(trackName, contentUri))
+                val mediaMetadataRetriever =
+                    MediaMetadataRetriever().apply { setDataSource(context, contentUri) }
+
+                val artist =
+                    mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+
+                val duration =
+                    mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                        ?.toLong() ?: 0
+
+                musicFiles.add(MusicFileInfo(trackName, contentUri, artist ?: "UNKNOWN", duration))
             }
             return musicFiles
         } ?: return emptyList()
