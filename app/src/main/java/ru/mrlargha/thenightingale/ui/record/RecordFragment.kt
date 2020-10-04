@@ -9,7 +9,6 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
-import androidx.navigation.navGraphViewModels
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.fragment_record.view.*
 import ru.mrlargha.thenightingale.R
@@ -18,7 +17,7 @@ import ru.mrlargha.thenightingale.databinding.FragmentRecordBinding
 @AndroidEntryPoint
 class RecordFragment : Fragment() {
 
-    private val viewModel: RecordViewModel by navGraphViewModels(R.navigation.mobile_navigation)
+    private val viewModel: RecordViewModel by viewModels()
     private val navArgs: RecordFragmentArgs by navArgs()
 
     override fun onCreateView(
@@ -31,13 +30,6 @@ class RecordFragment : Fragment() {
             recordButton.setOnClickListener {
                 viewModel.invertStatus()
             }
-        }
-
-        view?.setOnKeyListener { _, keyCode, _ ->
-            if (keyCode == KeyEvent.KEYCODE_BACK) {
-                viewModel.stop()
-            }
-            false;
         }
 
         viewModel.fileUri = Uri.parse(navArgs.musicFileUri)
@@ -62,7 +54,7 @@ class RecordFragment : Fragment() {
 
         viewModel.currentProgressLiveData.observe(viewLifecycleOwner) {
             binding.currentPosText.text = "${it / 60000}:${it % 60000 / 1000}"
-            binding.progress.value = it.toFloat()
+            binding.progress.value = if (it <= binding.progress.valueTo) it.toFloat() else 0f
         }
 
         viewModel.playerStatusLiveData.observe(viewLifecycleOwner) { recordState ->
@@ -81,5 +73,4 @@ class RecordFragment : Fragment() {
             binding.progress.valueTo = it.toFloat()
         }
     }
-
 }
