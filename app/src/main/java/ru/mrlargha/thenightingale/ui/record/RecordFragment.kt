@@ -23,9 +23,10 @@ class RecordFragment : Fragment() {
 
     private val viewModel: RecordViewModel by viewModels()
     private val navArgs: RecordFragmentArgs by navArgs()
-    private val chartValues: MutableList<Entry> = mutableListOf()
+
+    private var chartValues: List<Entry> = emptyList()
     private lateinit var binding: FragmentRecordBinding
-    private var collectDataJob: Job? = null
+    private var chartUpdateJob: Job? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -37,6 +38,28 @@ class RecordFragment : Fragment() {
             recordButton.setOnClickListener {
                 viewModel.invertStatus()
             }
+            slider2.addOnChangeListener { _, value, _ ->
+                viewModel.currentIntensity.set(value.toInt())
+            }
+            slider2.valueFrom = 0f
+            slider2.valueTo = 255f
+            chart.axisLeft.apply {
+                setDrawAxisLine(false)
+                axisMaximum = 256f
+                setDrawGridLines(false)
+            }
+            chart.axisRight.apply {
+                setDrawAxisLine(false)
+                axisMaximum = 256f
+                setDrawGridLines(false)
+            }
+            chart.xAxis.apply {
+                setDrawAxisLine(false)
+                setDrawGridLines(false)
+            }
+            chart.legend.isEnabled = false
+            chart.isClickable = false
+            chart.isEnabled = false
         }
 
         viewModel.fileUri = Uri.parse(navArgs.musicFileUri)
@@ -46,8 +69,10 @@ class RecordFragment : Fragment() {
     }
 
     private fun updateChart() {
-        binding.chart.data = LineData(LineDataSet(chartValues.takeLast(100), "Trolololol"))
-//        binding.chart.xAxis.mAxisMinimum = if(chartValues.last().x - 1000 >= 0) chartValues.last().x - 1000 else 0f
+        binding.chart.data = LineData(LineDataSet(chartValues, "").apply {
+            setDrawCircles(false)
+        })
+        binding.chart.xAxis.mAxisMaximum = chartValues.last().x
         binding.chart.invalidate()
     }
 
@@ -76,29 +101,30 @@ class RecordFragment : Fragment() {
                 RecordViewModel.RecordState.RECORDING ->
                     binding.recordButton.setIconResource(R.drawable.stop)
                         .also { binding.recordButton.text = "ОСТАНОВИТЬ ЗАПИСЬ" }.also {
-                            collectDataJob = lifecycleScope.launch(Dispatchers.IO) {
-                                var i = 0
-                                while (true){
-                                    i += 10
+                            chartUpdateJob = lifecycleScope.launch {
+                                while (true) {
+                                    chartValues = viewModel.recordData.takeLast(100)
+                                        .map { Entry(it.first.toFloat(), it.second.toFloat()) }
                                     launch(Dispatchers.Main) {
-                                        chartValues.add(Entry(i.toFloat(), binding.slider2.value))
+                                        binding.chart.xAxis.mAxisMaximum = chartValues.last().x
                                         updateChart()
                                     }
                                     delay(50)
                                 }
                             }
                         }
+
                 RecordViewModel.RecordState.STOPPED ->
                     binding.recordButton.setIconResource(R.drawable.record)
                         .also { binding.recordButton.text = "НАЧАТЬ ЗАПИСЬ" }.also {
-                            collectDataJob?.cancel()
-                            chartValues.clear()
+                            chartUpdateJob?.cancel()
+                            chartValues = emptyList()
                         }
             }
-        }
 
-        viewModel.maxPosLiveData.observe(viewLifecycleOwner) {
-            binding.progress.valueTo = it.toFloat()
+            viewModel.maxPosLiveData.observe(viewLifecycleOwner) {
+                binding.progress.valueTo = it.toFloat()
+            }
         }
     }
 }

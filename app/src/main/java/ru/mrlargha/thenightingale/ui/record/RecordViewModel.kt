@@ -9,11 +9,12 @@ import androidx.lifecycle.*
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.FragmentScoped
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ru.mrlargha.thenightingale.data.models.MusicFileInfo
+import java.util.concurrent.atomic.AtomicInteger
 
-@FragmentScoped
 class RecordViewModel @ViewModelInject constructor(
     @ActivityContext val context: Context
 ) :
@@ -23,6 +24,9 @@ class RecordViewModel @ViewModelInject constructor(
         RECORDING,
         STOPPED
     }
+
+    var currentIntensity: AtomicInteger = AtomicInteger(0)
+    private var collectDataJob: Job? = null
 
     var fileUri: Uri? = null
         set(value) {
@@ -40,6 +44,8 @@ class RecordViewModel @ViewModelInject constructor(
     val maxPosLiveData: MutableLiveData<Int> = MutableLiveData(100)
 
     private var mediaPlayer: MediaPlayer? = null
+
+    val recordData: MutableList<Pair<Int, Int>> = mutableListOf()
 
     private fun setupMediaPlayer() =
         fileUri?.let { uri ->
@@ -63,27 +69,40 @@ class RecordViewModel @ViewModelInject constructor(
         mediaPlayer?.stop()
     }
 
-    fun invertStatus() {
-        when (playerStatusLiveData.value) {
-            RecordState.RECORDING -> {
-                mediaPlayer?.stop()
-                playerReadyLiveData.postValue(false)
-                setupMediaPlayer()
-                playerStatusLiveData.postValue(RecordState.STOPPED)
+    private fun startRecording() {
+        mediaPlayer?.setOnCompletionListener { finishRecording() }
+        mediaPlayer?.let {
+            it.start()
+            recordData.clear()
+            playerStatusLiveData.postValue(RecordState.RECORDING)
+            viewModelScope.launch {
+                while (it.isPlaying) {
+                    currentProgressLiveData.postValue(it.currentPosition)
+                    delay(100)
+                }
             }
-            else -> {
-                mediaPlayer?.let {
-                    it.start()
-                    playerStatusLiveData.postValue(RecordState.RECORDING)
-                    viewModelScope.launch {
-                        while (it.isPlaying) {
-                            currentProgressLiveData.postValue(it.currentPosition)
-                            delay(100)
-                        }
-                    }
+            collectDataJob = viewModelScope.launch {
+                while (true){
+                    recordData.add(Pair(mediaPlayer?.currentPosition ?: 0, currentIntensity.get()))
+                    delay(50)
                 }
             }
         }
     }
 
+    private fun finishRecording() {
+        mediaPlayer?.stop()
+        playerReadyLiveData.postValue(false)
+        setupMediaPlayer()
+        playerStatusLiveData.postValue(RecordState.STOPPED)
+        collectDataJob?.cancel()
+
+    }
+
+    fun invertStatus() {
+        when (playerStatusLiveData.value) {
+            RecordState.STOPPED -> startRecording()
+            else -> finishRecording()
+        }
+    }
 }
