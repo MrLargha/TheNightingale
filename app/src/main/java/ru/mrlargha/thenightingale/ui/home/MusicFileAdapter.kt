@@ -1,6 +1,5 @@
 package ru.mrlargha.thenightingale.ui.home
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,7 +8,6 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.*
 import ru.mrlargha.thenightingale.data.models.MusicFileInfo
 import ru.mrlargha.thenightingale.databinding.MusicFileViewBinding
-import ru.mrlargha.thenightingale.ui.record.RecordFragment
 
 class MusicFileAdapter(_data: List<MusicFileInfo> = emptyList()) :
     RecyclerView.Adapter<MusicFileAdapter.MusicFileViewHolder>() {

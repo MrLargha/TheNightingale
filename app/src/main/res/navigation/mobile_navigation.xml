@@ -8,8 +8,8 @@
     <fragment
         android:id="@+id/navigation_home"
         android:name="ru.mrlargha.thenightingale.ui.home.HomeFragment"
-        android:label="@string/title_home"
-        tools:layout="@layout/fragment_home" >
+        android:label="Tracks"
+        tools:layout="@layout/fragment_home">
         <action
             android:id="@+id/action_navigation_home_to_recordFragment"
             app:destination="@id/recordFragment" />
@@ -20,15 +20,15 @@
         android:label="Records"
         tools:layout="@layout/fragment_records" />
     <fragment
-        android:id="@+id/navigation_sync"
-        android:name="ru.mrlargha.thenightingale.ui.sync.SyncFragment"
-        android:label="Sync"
-        tools:layout="@layout/fragment_sync" />
+        android:id="@+id/navigation_bluetooth"
+        android:name="ru.mrlargha.thenightingale.ui.bluetooth.BluetoothSetupFragment"
+        android:label="Bluetooth"
+        tools:layout="@layout/fragment_bluetooth_setup" />
     <fragment
         android:id="@+id/recordFragment"
-        android:name="ru.mrlargha.thenightingale.ui.record.RecordFragment"
+        android:name="ru.mrlargha.thenightingale.ui.recording.RecordFragment"
         android:label="fragment_record"
-        tools:layout="@layout/fragment_record" >
+        tools:layout="@layout/fragment_record">
         <argument
             android:name="musicFileUri"
             app:argType="string" />

@@ -1,4 +1,4 @@
-package ru.mrlargha.thenightingale.ui.record
+package ru.mrlargha.thenightingale.ui.recording
 
 import android.content.Context
 import android.media.AudioAttributes
@@ -7,7 +7,6 @@ import android.net.Uri
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.*
 import dagger.hilt.android.qualifiers.ActivityContext
-import dagger.hilt.android.scopes.FragmentScoped
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

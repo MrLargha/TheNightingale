@@ -21,7 +21,7 @@ class BLEPlayerService : Service() {
     private var mBluetoothGatt: BluetoothGatt? = null
     private var mBluetoothDeviceAddress: String? = null
     private var mBluetoothManager: BluetoothManager? = null
-    private var mBluetoothAdapter: BluetoothAdapter? = null
+    var mBluetoothAdapter: BluetoothAdapter? = null
 
     private val mGattCallback: BluetoothGattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {

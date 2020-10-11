@@ -4,12 +4,14 @@
     <item
         android:id="@+id/navigation_home"
         android:icon="@drawable/ic_home_black_24dp"
-        android:title="@string/title_home" />
+        android:title="Tracks" />
     <item
         android:id="@+id/navigation_records"
+        android:icon="@drawable/records"
         android:title="Records" />
     <item
-        android:id="@+id/navigation_sync"
-        android:title="Sync" />
+        android:id="@+id/navigation_bluetooth"
+        android:icon="@drawable/bluetooth_24"
+        android:title="Bluetooth" />
 
 </menu>

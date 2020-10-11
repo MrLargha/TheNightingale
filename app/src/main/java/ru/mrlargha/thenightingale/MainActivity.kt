@@ -1,9 +1,14 @@
 package ru.mrlargha.thenightingale
 
 import android.Manifest
+import android.bluetooth.BluetoothAdapter
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -15,6 +20,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import dagger.hilt.android.AndroidEntryPoint
 import ru.mrlargha.thenightingale.data.repos.MusicRepository
+import ru.mrlargha.thenightingale.services.BLEPlayerService
 import javax.inject.Inject
 
 
@@ -40,7 +46,7 @@ class MainActivity : AppCompatActivity() {
 
         val appBarConfiguration = AppBarConfiguration(
             setOf(
-                R.id.navigation_home, R.id.navigation_records, R.id.navigation_sync
+                R.id.navigation_home, R.id.navigation_records, R.id.navigation_bluetooth
             )
         )
         setupActionBarWithNavController(navController, appBarConfiguration)

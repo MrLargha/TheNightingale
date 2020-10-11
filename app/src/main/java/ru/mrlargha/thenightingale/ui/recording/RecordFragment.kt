@@ -1,4 +1,4 @@
-package ru.mrlargha.thenightingale.ui.record
+package ru.mrlargha.thenightingale.ui.recording
 
 import android.net.Uri
 import android.os.Bundle
