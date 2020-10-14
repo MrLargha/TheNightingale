@@ -20,7 +20,6 @@ import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import dagger.hilt.android.AndroidEntryPoint
 import ru.mrlargha.thenightingale.data.repos.MusicRepository
-import ru.mrlargha.thenightingale.services.BLEPlayerService
 import javax.inject.Inject
 
 

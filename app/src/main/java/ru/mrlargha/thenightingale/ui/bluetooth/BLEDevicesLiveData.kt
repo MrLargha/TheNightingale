@@ -34,22 +34,12 @@ class DevicesLiveData :
         return devices.size > 0
     }
 
-    /**
-     * Clears the list of devices.
-     */
     fun clear() {
         devices.clear()
         filteredDevices = null
         postValue(null)
     }
 
-
-    /**
-     * Finds the index of existing devices on the device list.
-     *
-     * @param result scan result.
-     * @return Index of -1 if not found.
-     */
     private fun indexOf(result: ScanResult): Int {
         for ((i, device) in devices.withIndex()) {
             if (device.matches(result)) return i

@@ -7,42 +7,28 @@ import android.location.LocationManager
 import android.preference.PreferenceManager
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.MutableLiveData
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 import no.nordicsemi.android.support.v18.scanner.ScanSettings
 import ru.mrlargha.thenightingale.NightingaleApp
+import ru.mrlargha.thenightingale.data.models.BLEScannerState
+import ru.mrlargha.thenightingale.data.models.DevicesList
 import ru.mrlargha.thenightingale.tools.Utils
 
 class BluetoothSetupViewModel @ViewModelInject constructor(
-    application: Application,
+    application: Application
 ) :
     AndroidViewModel(application) {
-    /**
-     * MutableLiveData containing the list of devices.
-     */
-    private var devicesLiveData: DevicesLiveData? = null
 
-    /**
-     * MutableLiveData containing the scanner state.
-     */
-    var scannerStateLiveData: BLEScannerStateLiveData? = null
+    var devicesLiveData: MutableLiveData<DevicesList> = MutableLiveData(DevicesList())
+        private set
+    var scannerStateLiveData: MutableLiveData<BLEScannerState> =
+        MutableLiveData(BLEScannerState(Utils.isBleEnabled, Utils.isLocationEnabled(application)))
         private set
 
-    private var preferences: SharedPreferences? = null
-
-    fun getDevices(): DevicesLiveData? {
-        return devicesLiveData
-    }
-
-
     init {
-        preferences = PreferenceManager.getDefaultSharedPreferences(application)
-        scannerStateLiveData = BLEScannerStateLiveData(
-            Utils.isBleEnabled,
-            Utils.isLocationEnabled(application)
-        )
-        devicesLiveData = DevicesLiveData()
         registerBroadcastReceivers(application)
     }
 
@@ -54,57 +40,47 @@ class BluetoothSetupViewModel @ViewModelInject constructor(
         }
     }
 
-    /**
-     * Forces the observers to be notified. This method is used to refresh the screen after the
-     * location permission has been granted. In result, the observer in
-     * [no.nordicsemi.android.blinky.ScannerActivity] will try to start scanning.
-     */
-    fun refresh() {
-        scannerStateLiveData!!.refresh()
-    }
-
-    /**
-     * Start scanning for Bluetooth devices.
-     */
-    fun startScan() {
-        if (scannerStateLiveData!!.isScanning) {
-            return
+    fun startScan(): Unit? =
+        scannerStateLiveData.value?.let {
+            if (!it.isScanning) {
+                val settings = ScanSettings.Builder()
+                    .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                    .setReportDelay(500)
+                    .setUseHardwareBatchingIfSupported(false)
+                    .build()
+                val scanner = BluetoothLeScannerCompat.getScanner()
+                scanner.startScan(null, settings, scanCallback)
+                scannerStateLiveData.value = it.apply {
+                    isScanning = true
+                }
+            }
         }
 
-        // Scanning settings
-        val settings = ScanSettings.Builder()
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-            .setReportDelay(500)
-            .setUseHardwareBatchingIfSupported(false)
-            .build()
-        val scanner = BluetoothLeScannerCompat.getScanner()
-        scanner.startScan(null, settings, scanCallback)
-        scannerStateLiveData!!.scanningStarted()
-    }
-
-    /**
-     * Stop scanning for bluetooth devices.
-     */
-    fun stopScan() {
-        if (scannerStateLiveData!!.isScanning && scannerStateLiveData!!.isBluetoothEnabled) {
+    fun stopScan() = scannerStateLiveData.value?.let {
+        if (it.isScanning && it.isBluetoothEnabled) {
             val scanner = BluetoothLeScannerCompat.getScanner()
             scanner.stopScan(scanCallback)
-            scannerStateLiveData!!.scanningStopped()
+            scannerStateLiveData.value = it.apply {
+                isScanning = false
+            }
         }
     }
 
-    // TODO: Fix non null assertion
     private val scanCallback: ScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             // This callback will be called only if the scan report delay is not set or is set to 0.
-
             // If the packet has been obtained while Location was disabled, mark Location as not required
             if (Utils.isLocationRequired(getApplication()) && !Utils.isLocationEnabled(
                     getApplication()
                 )
             ) Utils.markLocationNotRequired(getApplication())
-            if (devicesLiveData?.deviceDiscovered(result)!!) {
-                scannerStateLiveData!!.recordFound()
+
+            devicesLiveData.value?.let {
+                if (it.deviceDiscovered(result)) {
+                    scannerStateLiveData.value = scannerStateLiveData.value?.apply {
+                        hasRecords = true
+                    }
+                }
             }
         }
 
@@ -119,15 +95,18 @@ class BluetoothSetupViewModel @ViewModelInject constructor(
             ) Utils.markLocationNotRequired(getApplication())
             var atLeastOneMatchedFilter = false
             for (result in results) atLeastOneMatchedFilter =
-                devicesLiveData?.deviceDiscovered(result)!! || atLeastOneMatchedFilter
+                devicesLiveData.value?.deviceDiscovered(result) ?: false || atLeastOneMatchedFilter
             if (atLeastOneMatchedFilter) {
-                scannerStateLiveData!!.recordFound()
+                scannerStateLiveData.value = scannerStateLiveData.value?.apply {
+                    hasRecords = true
+                }
             }
         }
 
         override fun onScanFailed(errorCode: Int) {
-            // TODO This should be handled
-            scannerStateLiveData!!.scanningStopped()
+            scannerStateLiveData.value = scannerStateLiveData.value?.apply {
+                isScanning = false
+            }
         }
     }
 
@@ -153,7 +132,9 @@ class BluetoothSetupViewModel @ViewModelInject constructor(
     private val locationProviderChangedReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val enabled: Boolean = Utils.isLocationEnabled(context)
-            scannerStateLiveData!!.setLocationEnabled(enabled)
+            scannerStateLiveData.value = scannerStateLiveData.value?.apply {
+                isLocationEnabled = enabled
+            }
         }
     }
 
@@ -168,11 +149,20 @@ class BluetoothSetupViewModel @ViewModelInject constructor(
                 BluetoothAdapter.STATE_OFF
             )
             when (state) {
-                BluetoothAdapter.STATE_ON -> scannerStateLiveData!!.bluetoothEnabled()
-                BluetoothAdapter.STATE_TURNING_OFF, BluetoothAdapter.STATE_OFF -> if (previousState != BluetoothAdapter.STATE_TURNING_OFF && previousState != BluetoothAdapter.STATE_OFF) {
-                    stopScan()
-                    scannerStateLiveData!!.bluetoothDisabled()
-                }
+                BluetoothAdapter.STATE_ON -> scannerStateLiveData.value =
+                    scannerStateLiveData.value?.apply {
+                        isBluetoothEnabled = false
+                    }
+                BluetoothAdapter.STATE_TURNING_OFF, BluetoothAdapter.STATE_OFF ->
+                    if (previousState != BluetoothAdapter.STATE_TURNING_OFF
+                        && previousState != BluetoothAdapter.STATE_OFF
+                    ) {
+                        scannerStateLiveData.value =
+                            scannerStateLiveData.value?.apply {
+                                isScanning = false
+                                isBluetoothEnabled = false
+                            }
+                    }
             }
         }
     }
