@@ -16,10 +16,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import dagger.hilt.android.AndroidEntryPoint
 import ru.mrlargha.thenightingale.databinding.FragmentBluetoothSetupBinding
 import ru.mrlargha.thenightingale.tools.Utils
 
-
+@AndroidEntryPoint
 class BluetoothSetupFragment : Fragment() {
 
     private val viewModel: BluetoothSetupViewModel by viewModels()
@@ -48,7 +49,11 @@ class BluetoothSetupFragment : Fragment() {
 
         binding.apply {
             recycler.layoutManager = LinearLayoutManager(context)
-            recycler.adapter = BLEDeviceAdapter()
+            recycler.adapter = BLEDeviceAdapter().apply {
+                onConnectClickListener = {
+                    viewModel.connectToDevice(it)
+                }
+            }
             startScanButton.setOnClickListener {
                 if (viewModel.scannerStateLiveData.value?.isScanning == true)
                     viewModel.stopScan()
@@ -89,6 +94,18 @@ class BluetoothSetupFragment : Fragment() {
                 startScanButton.text = if (it.isScanning) "Stop scan" else "start scan"
                 scannerState.text =
                     if (it.isScanning) "Scanning in progress" else "Scanning stopped"
+            }
+        })
+        viewModel.bondStateLiveData.observe(viewLifecycleOwner, {
+            binding.apply {
+                if (it.isConnected) {
+                    connectionState.text =
+                        "Connected to " + (viewModel.bleManager.bluetoothDevice?.name
+                            ?: viewModel.bleManager.bluetoothDevice?.address)
+                    viewModel.stopScan()
+                } else {
+                    connectionState.text = "No device connected"
+                }
             }
         })
     }

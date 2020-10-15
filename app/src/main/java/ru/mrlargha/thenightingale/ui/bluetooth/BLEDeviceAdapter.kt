@@ -7,7 +7,11 @@ import androidx.recyclerview.widget.RecyclerView
 import ru.mrlargha.thenightingale.data.models.DiscoveredBLEDevice
 import ru.mrlargha.thenightingale.databinding.BleDeviceViewBinding
 
+typealias ClickListener = (device: DiscoveredBLEDevice) -> Unit
+
 class BLEDeviceAdapter : RecyclerView.Adapter<BLEDeviceAdapter.BLEDeviceViewHolder>() {
+
+    var onConnectClickListener: ClickListener? = null
 
     var devicesList: List<DiscoveredBLEDevice> = emptyList()
         set(value) {
@@ -15,7 +19,15 @@ class BLEDeviceAdapter : RecyclerView.Adapter<BLEDeviceAdapter.BLEDeviceViewHold
             notifyDataSetChanged()
         }
 
-    class BLEDeviceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class BLEDeviceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        init {
+            BleDeviceViewBinding.bind(itemView).apply {
+                connectButton.setOnClickListener {
+                    onConnectClickListener?.invoke(devicesList[adapterPosition])
+                }
+            }
+        }
+
         fun bind(device: DiscoveredBLEDevice) {
             BleDeviceViewBinding.bind(itemView).apply {
                 deviceName.text = device.name ?: device.address

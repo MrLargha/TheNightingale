@@ -1,27 +1,32 @@
 package ru.mrlargha.thenightingale.ui.bluetooth
 
-import android.app.Application
+import android.content.Context
+import android.util.Log
 import androidx.hilt.lifecycle.ViewModelInject
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 import no.nordicsemi.android.support.v18.scanner.ScanSettings
 import ru.mrlargha.thenightingale.data.models.BLEScannerState
 import ru.mrlargha.thenightingale.data.models.DevicesList
+import ru.mrlargha.thenightingale.data.models.DiscoveredBLEDevice
+import ru.mrlargha.thenightingale.data.repos.MotorBLEManager
 import ru.mrlargha.thenightingale.tools.Utils
+import ru.mrlargha.thenightingale.ui.home.HomeFragment.Companion.TAG
 
 class BluetoothSetupViewModel @ViewModelInject constructor(
-    application: Application
+    val bleManager: MotorBLEManager,
+    @ApplicationContext context: Context
 ) :
-    AndroidViewModel(application) {
+    ViewModel() {
 
-    var devicesLiveData: MutableLiveData<DevicesList> = MutableLiveData(DevicesList())
-        private set
-    var scannerStateLiveData: MutableLiveData<BLEScannerState> =
-        MutableLiveData(BLEScannerState(Utils.isBleEnabled, Utils.isLocationEnabled(application)))
-        private set
+    val devicesLiveData: MutableLiveData<DevicesList> = MutableLiveData(DevicesList())
+    val scannerStateLiveData: MutableLiveData<BLEScannerState> =
+        MutableLiveData(BLEScannerState(Utils.isBleEnabled, Utils.isLocationEnabled(context)))
+    val bondStateLiveData = bleManager.state
 
     fun startScan(): Unit? =
         scannerStateLiveData.value?.let {
@@ -49,14 +54,21 @@ class BluetoothSetupViewModel @ViewModelInject constructor(
         }
     }
 
+    fun connectToDevice(device: DiscoveredBLEDevice) {
+        Log.d(TAG, "Connecting to ${device.name}")
+        bleManager.connect(device.bluetoothDevice).retry(10, 100)
+            .useAutoConnect(false)
+            .enqueue()
+    }
+
     private val scanCallback: ScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             // This callback will be called only if the scan report delay is not set or is set to 0.
             // If the packet has been obtained while Location was disabled, mark Location as not required
-            if (Utils.isLocationRequired(getApplication()) && !Utils.isLocationEnabled(
-                    getApplication()
+            if (Utils.isLocationRequired(context) && !Utils.isLocationEnabled(
+                    context
                 )
-            ) Utils.markLocationNotRequired(getApplication())
+            ) Utils.markLocationNotRequired(context)
 
             devicesLiveData.value?.let {
                 if (it.deviceDiscovered(result)) {
@@ -68,10 +80,10 @@ class BluetoothSetupViewModel @ViewModelInject constructor(
         }
 
         override fun onBatchScanResults(results: List<ScanResult>) {
-            if (Utils.isLocationRequired(getApplication()) && !Utils.isLocationEnabled(
-                    getApplication()
+            if (Utils.isLocationRequired(context) && !Utils.isLocationEnabled(
+                    context
                 )
-            ) Utils.markLocationNotRequired(getApplication())
+            ) Utils.markLocationNotRequired(context)
             for (result in results)
                 devicesLiveData.value?.deviceDiscovered(result)
             scannerStateLiveData.value = scannerStateLiveData.value?.apply {

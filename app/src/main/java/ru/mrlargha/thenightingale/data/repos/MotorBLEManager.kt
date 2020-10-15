@@ -11,10 +11,12 @@ import no.nordicsemi.android.log.LogSession
 import no.nordicsemi.android.log.Logger
 import ru.mrlargha.thenightingale.data.models.BLEMotor
 import java.util.*
+import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-open class MotorBLEManager(@ApplicationContext context: Context) : ObservableBleManager(context) {
+open class MotorBLEManager @Inject constructor(@ApplicationContext context: Context) :
+    ObservableBleManager(context) {
 
     companion object {
         private val NG_BLE_MOTOR_UUID_SERVICE =

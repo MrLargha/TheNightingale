@@ -5,17 +5,21 @@ import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.net.Uri
 import androidx.hilt.lifecycle.ViewModelInject
-import androidx.lifecycle.*
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.qualifiers.ActivityContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ru.mrlargha.thenightingale.data.models.MusicFileInfo
+import ru.mrlargha.thenightingale.data.repos.MotorBLEManager
 import java.util.concurrent.atomic.AtomicInteger
 
 class RecordViewModel @ViewModelInject constructor(
-    @ActivityContext val context: Context
+    @ActivityContext val context: Context,
+    private val motorBLEManager: MotorBLEManager
 ) :
     ViewModel() {
 
@@ -77,13 +81,14 @@ class RecordViewModel @ViewModelInject constructor(
             viewModelScope.launch {
                 while (it.isPlaying) {
                     currentProgressLiveData.postValue(it.currentPosition)
-                    delay(100)
+                    delay(200)
                 }
             }
             collectDataJob = viewModelScope.launch {
-                while (true){
+                while (true) {
                     recordData.add(Pair(mediaPlayer?.currentPosition ?: 0, currentIntensity.get()))
-                    delay(50)
+                    motorBLEManager.setMotorSpeed(currentIntensity.toByte())
+                    delay(200)
                 }
             }
         }
@@ -95,7 +100,6 @@ class RecordViewModel @ViewModelInject constructor(
         setupMediaPlayer()
         playerStatusLiveData.postValue(RecordState.STOPPED)
         collectDataJob?.cancel()
-
     }
 
     fun invertStatus() {

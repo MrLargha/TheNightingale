@@ -1,16 +1,14 @@
 package ru.mrlargha.thenightingale.data.models
 
 import android.bluetooth.BluetoothDevice
-import android.os.Parcel
-import android.os.Parcelable
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 
 class DiscoveredBLEDevice(scanResult: ScanResult) {
-    private val device: BluetoothDevice = scanResult.device
+    val bluetoothDevice: BluetoothDevice = scanResult.device
     private var lastScanResult: ScanResult? = null
     private var previousRssi = 0
 
-    val address: String = device.address
+    val address: String = bluetoothDevice.address
 
     var name: String? = null
         private set
@@ -39,6 +37,6 @@ class DiscoveredBLEDevice(scanResult: ScanResult) {
     }
 
     fun matches(scanResult: ScanResult): Boolean {
-        return device.address == scanResult.device.address
+        return bluetoothDevice.address == scanResult.device.address
     }
 }
