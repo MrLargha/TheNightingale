@@ -1,9 +1,13 @@
 package ru.mrlargha.thenightingale.ui.bluetooth
 
 import android.Manifest
+import android.app.Activity.RESULT_OK
+import android.app.Application
 import android.bluetooth.BluetoothAdapter
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
+import android.content.IntentFilter
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -19,6 +23,22 @@ import ru.mrlargha.thenightingale.tools.Utils
 class BluetoothSetupFragment : Fragment() {
 
     private val viewModel: BluetoothSetupViewModel by viewModels()
+    private val locationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+            if (it) {
+                // Attempting to scan again
+                startScan()
+            }
+        }
+
+    private val bluetoothEnableLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode != RESULT_OK) {
+                // TODO: Notify user, that he fucked up
+            } else {
+                startScan()
+            }
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -26,81 +46,83 @@ class BluetoothSetupFragment : Fragment() {
     ): View? {
         val binding = FragmentBluetoothSetupBinding.inflate(inflater, container, false)
 
-
-
         binding.apply {
             recycler.layoutManager = LinearLayoutManager(context)
             recycler.adapter = BLEDeviceAdapter()
-            startScanButton.setOnClickListener { startScan() }
+            startScanButton.setOnClickListener {
+                if (viewModel.scannerStateLiveData.value?.isScanning == true)
+                    viewModel.stopScan()
+                else
+                    startScan()
+            }
         }
+
+        registerBroadcastReceivers(activity?.application!!)
 
         subscribeUI(binding)
 
         return binding.root
     }
 
-//    override fun onRequestPermissionsResult(
-//        requestCode: Int,
-//        permissions: Array<String?>,
-//        grantResults: IntArray
-//    ) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-//        if (requestCode == no.nordicsemi.android.blinky.ScannerActivity.REQUEST_ACCESS_FINE_LOCATION) {
-//            viewModel.refresh()
-//        }
-//    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>, grantResults: IntArray
-    ) {
-        when (requestCode) {
-            REQUEST_ACCESS_FINE_LOCATION -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    viewModel.startScan()
-                }
-            }
-        }
-    }
-
-
     private fun startScan() {
         // Location must be enabled.
         if (!Utils.isLocationPermissionsGranted(requireContext())) {
-            val requestLauncher =
-                registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-                    if (it) {
-                        // Attempting to scan again
-                        startScan()
-                    }
-                }
             Utils.markLocationPermissionRequested(requireContext())
-            requestLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            return
         }
-        // Bluetooth must be enabled.
+        // BT must be enabled
         if (viewModel.scannerStateLiveData.value?.isBluetoothEnabled == true) {
             viewModel.startScan()
         } else {
-            val enableIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            startActivity(enableIntent)
-            viewModel.startScan()
+            bluetoothEnableLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
         }
-
-//        @Suppress("DEPRECATION")
-//        requestPermissions(
-//            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-//            REQUEST_ACCESS_FINE_LOCATION
-//        )
-
     }
 
     private fun subscribeUI(binding: FragmentBluetoothSetupBinding) {
         viewModel.devicesLiveData.observe(viewLifecycleOwner, { devices ->
             (binding.recycler.adapter as BLEDeviceAdapter).devicesList = devices.devices
         })
+        viewModel.scannerStateLiveData.observe(viewLifecycleOwner, {
+            binding.apply {
+                progressBar.visibility = if (it.isScanning) View.VISIBLE else View.GONE
+                startScanButton.text = if (it.isScanning) "Stop scan" else "start scan"
+                scannerState.text =
+                    if (it.isScanning) "Scanning in progress" else "Scanning stopped"
+            }
+        })
     }
 
-    companion object {
-        private const val REQUEST_ACCESS_FINE_LOCATION: Int = 2281
+    private fun registerBroadcastReceivers(application: Application) {
+        application.registerReceiver(
+            bluetoothStateBroadcastReceiver,
+            IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+        )
+    }
+
+    private val bluetoothStateBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_OFF)
+            val previousState = intent.getIntExtra(
+                BluetoothAdapter.EXTRA_PREVIOUS_STATE,
+                BluetoothAdapter.STATE_OFF
+            )
+            when (state) {
+//                BluetoothAdapter.STATE_ON -> {
+//                    startScan()
+//                }
+                BluetoothAdapter.STATE_TURNING_OFF, BluetoothAdapter.STATE_OFF ->
+                    if (previousState != BluetoothAdapter.STATE_TURNING_OFF
+                        && previousState != BluetoothAdapter.STATE_OFF
+                    ) {
+//                        viewModel.scannerStateLiveData.value =
+//                            viewModel.scannerStateLiveData.value?.apply {
+//                                isScanning = false
+//                                isBluetoothEnabled = false
+//                            }
+                        // TODO: Notify user that he fucked up, and stop scan
+                    }
+            }
+        }
     }
 }

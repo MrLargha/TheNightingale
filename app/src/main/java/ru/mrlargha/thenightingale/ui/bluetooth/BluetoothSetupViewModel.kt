@@ -1,12 +1,6 @@
 package ru.mrlargha.thenightingale.ui.bluetooth
 
 import android.app.Application
-import android.bluetooth.BluetoothAdapter
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.location.LocationManager
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
@@ -14,7 +8,6 @@ import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 import no.nordicsemi.android.support.v18.scanner.ScanSettings
-import ru.mrlargha.thenightingale.NightingaleApp
 import ru.mrlargha.thenightingale.data.models.BLEScannerState
 import ru.mrlargha.thenightingale.data.models.DevicesList
 import ru.mrlargha.thenightingale.tools.Utils
@@ -30,24 +23,12 @@ class BluetoothSetupViewModel @ViewModelInject constructor(
         MutableLiveData(BLEScannerState(Utils.isBleEnabled, Utils.isLocationEnabled(application)))
         private set
 
-    init {
-        registerBroadcastReceivers(application)
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        getApplication<NightingaleApp>().unregisterReceiver(bluetoothStateBroadcastReceiver)
-        if (Utils.isMarshmallowOrAbove) {
-            getApplication<Application>().unregisterReceiver(locationProviderChangedReceiver)
-        }
-    }
-
     fun startScan(): Unit? =
         scannerStateLiveData.value?.let {
             if (!it.isScanning) {
                 val settings = ScanSettings.Builder()
                     .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                    .setReportDelay(500)
+                    .setReportDelay(5000)
                     .setUseHardwareBatchingIfSupported(false)
                     .build()
                 val scanner = BluetoothLeScannerCompat.getScanner()
@@ -105,60 +86,6 @@ class BluetoothSetupViewModel @ViewModelInject constructor(
         override fun onScanFailed(errorCode: Int) {
             scannerStateLiveData.value = scannerStateLiveData.value?.apply {
                 isScanning = false
-            }
-        }
-    }
-
-    private fun registerBroadcastReceivers(application: Application) {
-        application.registerReceiver(
-            bluetoothStateBroadcastReceiver,
-            IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
-        )
-        if (Utils.isMarshmallowOrAbove) {
-            application.registerReceiver(
-                locationProviderChangedReceiver,
-                IntentFilter(LocationManager.MODE_CHANGED_ACTION)
-            )
-        }
-    }
-
-    /**
-     * Broadcast receiver to monitor the changes in the location provider.
-     */
-    private val locationProviderChangedReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val enabled: Boolean = Utils.isLocationEnabled(context)
-            scannerStateLiveData.value = scannerStateLiveData.value?.apply {
-                isLocationEnabled = enabled
-            }
-        }
-    }
-
-    /**
-     * Broadcast receiver to monitor the changes in the bluetooth adapter.
-     */
-    private val bluetoothStateBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_OFF)
-            val previousState = intent.getIntExtra(
-                BluetoothAdapter.EXTRA_PREVIOUS_STATE,
-                BluetoothAdapter.STATE_OFF
-            )
-            when (state) {
-                BluetoothAdapter.STATE_ON -> scannerStateLiveData.value =
-                    scannerStateLiveData.value?.apply {
-                        isBluetoothEnabled = false
-                    }
-                BluetoothAdapter.STATE_TURNING_OFF, BluetoothAdapter.STATE_OFF ->
-                    if (previousState != BluetoothAdapter.STATE_TURNING_OFF
-                        && previousState != BluetoothAdapter.STATE_OFF
-                    ) {
-                        scannerStateLiveData.value =
-                            scannerStateLiveData.value?.apply {
-                                isScanning = false
-                                isBluetoothEnabled = false
-                            }
-                    }
             }
         }
     }
