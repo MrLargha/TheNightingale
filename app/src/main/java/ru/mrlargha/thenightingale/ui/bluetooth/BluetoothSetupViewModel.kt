@@ -2,9 +2,11 @@ package ru.mrlargha.thenightingale.ui.bluetooth
 
 import android.app.Application
 import android.bluetooth.BluetoothAdapter
-import android.content.*
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.location.LocationManager
-import android.preference.PreferenceManager
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
@@ -84,23 +86,20 @@ class BluetoothSetupViewModel @ViewModelInject constructor(
             }
         }
 
-        // TODO: Fix non null assertion
         override fun onBatchScanResults(results: List<ScanResult>) {
-            // This callback will be called only if the report delay set above is greater then 0.
-
-            // If the packet has been obtained while Location was disabled, mark Location as not required
             if (Utils.isLocationRequired(getApplication()) && !Utils.isLocationEnabled(
                     getApplication()
                 )
             ) Utils.markLocationNotRequired(getApplication())
-            var atLeastOneMatchedFilter = false
-            for (result in results) atLeastOneMatchedFilter =
-                devicesLiveData.value?.deviceDiscovered(result) ?: false || atLeastOneMatchedFilter
-            if (atLeastOneMatchedFilter) {
-                scannerStateLiveData.value = scannerStateLiveData.value?.apply {
-                    hasRecords = true
-                }
+            for (result in results)
+                devicesLiveData.value?.deviceDiscovered(result)
+            scannerStateLiveData.value = scannerStateLiveData.value?.apply {
+                hasRecords = true
             }
+
+            // Dirty MVVM hack
+            devicesLiveData.value = devicesLiveData.value
+
         }
 
         override fun onScanFailed(errorCode: Int) {
@@ -110,9 +109,6 @@ class BluetoothSetupViewModel @ViewModelInject constructor(
         }
     }
 
-    /**
-     * Register for required broadcast receivers.
-     */
     private fun registerBroadcastReceivers(application: Application) {
         application.registerReceiver(
             bluetoothStateBroadcastReceiver,

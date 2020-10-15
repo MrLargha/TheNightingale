@@ -5,6 +5,4 @@ data class BLEScannerState(
     var isLocationEnabled: Boolean,
     var isScanning: Boolean = false,
     var hasRecords: Boolean = false
-) {
-
-}
+)

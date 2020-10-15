@@ -3,7 +3,7 @@ package ru.mrlargha.thenightingale.data.models
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 
 class DevicesList {
-    private val devices: MutableList<DiscoveredBLEDevice> = mutableListOf()
+    val devices: MutableList<DiscoveredBLEDevice> = mutableListOf()
 
     fun deviceDiscovered(result: ScanResult): Boolean {
         val device: DiscoveredBLEDevice
