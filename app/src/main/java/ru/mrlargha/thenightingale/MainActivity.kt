@@ -1,6 +1,7 @@
 package ru.mrlargha.thenightingale
 
 import android.Manifest
+import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.content.ComponentName
 import android.content.Context

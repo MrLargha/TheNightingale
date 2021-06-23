@@ -77,7 +77,7 @@ class RecordFragment : Fragment() {
     }
 
     private fun subscribeUI() {
-        viewModel.trackInfoLiveData.observe(viewLifecycleOwner) {
+        viewModel.musicFileInfoLiveData.observe(viewLifecycleOwner) {
             binding.apply {
                 artist.text = it.artist
                 maxDuration.text = it.durationString
