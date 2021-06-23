@@ -5,12 +5,13 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import ru.mrlargha.thenightingale.data.models.IntensityRecord
 
-//@Database(
-//    entities = [],
-//    version = 1,
-//    exportSchema = false
-//)
+@Database(
+    entities = [IntensityRecord::class],
+    version = 1,
+    exportSchema = false
+)
 abstract class MusicDatabase : RoomDatabase() {
     abstract fun intensityRecordDao(): IntensityRecordDao
 

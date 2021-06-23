@@ -10,7 +10,6 @@ import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import ru.mrlargha.thenightingale.databinding.FragmentHomeBinding
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class HomeFragment : Fragment() {

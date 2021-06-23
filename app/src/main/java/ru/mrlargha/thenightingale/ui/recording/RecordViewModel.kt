@@ -4,20 +4,29 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.net.Uri
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.*
+import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ActivityContext
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import ru.mrlargha.thenightingale.data.database.MusicDatabase
+import ru.mrlargha.thenightingale.data.models.IntensityRecord
 import ru.mrlargha.thenightingale.data.models.MusicFileInfo
+import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
+import javax.inject.Inject
 
-class RecordViewModel @ViewModelInject constructor(
-    @ActivityContext val context: Context
+@HiltViewModel
+class RecordViewModel @Inject constructor(
+    @ApplicationContext val context: Context
 ) :
     ViewModel() {
+
 
     enum class RecordState {
         RECORDING,
@@ -31,12 +40,17 @@ class RecordViewModel @ViewModelInject constructor(
         set(value) {
             field = value
             viewModelScope.launch(Dispatchers.IO) {
-                trackInfoLiveData.postValue(MusicFileInfo.createByUri(value ?: Uri.EMPTY, context))
+                musicFileInfoLiveData.postValue(
+                    MusicFileInfo.createByUri(
+                        value ?: Uri.EMPTY,
+                        context
+                    )
+                )
                 setupMediaPlayer()
             }
         }
 
-    val trackInfoLiveData: MutableLiveData<MusicFileInfo> = MutableLiveData()
+    val musicFileInfoLiveData: MutableLiveData<MusicFileInfo> = MutableLiveData()
     val currentProgressLiveData: MutableLiveData<Int> = MutableLiveData()
     val playerReadyLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
     val playerStatusLiveData: MutableLiveData<RecordState> = MutableLiveData(RecordState.STOPPED)
@@ -81,7 +95,7 @@ class RecordViewModel @ViewModelInject constructor(
                 }
             }
             collectDataJob = viewModelScope.launch {
-                while (true){
+                while (true) {
                     recordData.add(Pair(mediaPlayer?.currentPosition ?: 0, currentIntensity.get()))
                     delay(50)
                 }
@@ -95,7 +109,18 @@ class RecordViewModel @ViewModelInject constructor(
         setupMediaPlayer()
         playerStatusLiveData.postValue(RecordState.STOPPED)
         collectDataJob?.cancel()
-
+        val rec = musicFileInfoLiveData.value?.let {
+            IntensityRecord(
+                it,
+                Uri.decode(context.filesDir.path + "/rec_" + musicFileInfoLiveData.value?.name + ".ir")
+            )
+        }
+        rec?.let {
+            viewModelScope.launch(Dispatchers.IO) {
+                MusicDatabase.getInstance(context).intensityRecordDao().insertRecord(it)
+                it.saveData()
+            }
+        }
     }
 
     fun invertStatus() {
