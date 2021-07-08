@@ -1,4 +1,4 @@
-package ru.mrlargha.thenightingale.ui.home
+package ru.mrlargha.thenightingale.ui
 
 import android.view.LayoutInflater
 import android.view.View
@@ -8,8 +8,9 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.*
 import ru.mrlargha.thenightingale.data.models.MusicFileInfo
 import ru.mrlargha.thenightingale.databinding.MusicFileViewBinding
+import ru.mrlargha.thenightingale.ui.home.HomeFragmentDirections
 
-class MusicFileAdapter(_data: List<MusicFileInfo> = emptyList()) :
+class MusicFileAdapter(_data: List<MusicFileInfo> = emptyList(), val recordsMode: Boolean = false) :
     RecyclerView.Adapter<MusicFileAdapter.MusicFileViewHolder>() {
 
     var data: List<MusicFileInfo> = _data
@@ -18,7 +19,7 @@ class MusicFileAdapter(_data: List<MusicFileInfo> = emptyList()) :
             notifyDataSetChanged()
         }
 
-    class MusicFileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class MusicFileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         fun bind(musicFileInfo: MusicFileInfo) {
             val binding = MusicFileViewBinding.bind(itemView)
             binding.apply {
@@ -31,12 +32,22 @@ class MusicFileAdapter(_data: List<MusicFileInfo> = emptyList()) :
                         thumbnail.setImageBitmap(bitmap)
                     }
                 }
-                recordButton.setOnClickListener {
-                    val action =
-                        HomeFragmentDirections.actionNavigationHomeToRecordFragment(
-                            musicFileInfo.contentUri.toString()
-                        )
-                    root.findNavController().navigate(action)
+                if (recordsMode) {
+                    recordButton.setOnClickListener {
+                        val action =
+                            HomeFragmentDirections.actionNavigationHomeToRecordFragment(
+                                musicFileInfo.contentUri
+                            )
+                        root.findNavController().navigate(action)
+                    }
+                } else {
+                    recordButton.setOnClickListener {
+                        val action =
+                            HomeFragmentDirections.actionNavigationHomeToRecordFragment(
+                                musicFileInfo.contentUri
+                            )
+                        root.findNavController().navigate(action)
+                    }
                 }
             }
         }

@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
 import no.nordicsemi.android.support.v18.scanner.ScanCallback
@@ -16,8 +17,10 @@ import ru.mrlargha.thenightingale.data.models.DiscoveredBLEDevice
 import ru.mrlargha.thenightingale.data.repos.MotorBLEManager
 import ru.mrlargha.thenightingale.tools.Utils
 import ru.mrlargha.thenightingale.ui.home.HomeFragment.Companion.TAG
+import javax.inject.Inject
 
-class BluetoothSetupViewModel @ViewModelInject constructor(
+@HiltViewModel
+class BluetoothSetupViewModel @Inject constructor(
     val bleManager: MotorBLEManager,
     @ApplicationContext context: Context
 ) :

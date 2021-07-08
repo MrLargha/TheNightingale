@@ -3,6 +3,7 @@ package ru.mrlargha.thenightingale.ui.recording
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
@@ -31,26 +32,37 @@ class RecordFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding = FragmentRecordBinding.inflate(inflater, container, false)
 
         binding.apply {
             recordButton.setOnClickListener {
-                viewModel.invertStatus()
+                if(navArgs.recordId > -1) {
+                    viewModel.playRecordedTrack(navArgs.recordId)
+                } else {
+                    viewModel.invertStatus()
+                }
+            }
+
+            if(navArgs.recordId > -1) {
+                recordButton.text = "PLAY"
             }
             slider2.addOnChangeListener { _, value, _ ->
                 viewModel.currentIntensity.set(value.toInt())
             }
-            slider2.valueFrom = 0f
+            slider2.valueFrom = -255f
+            slider2.value = 0f
             slider2.valueTo = 255f
             chart.axisLeft.apply {
                 setDrawAxisLine(false)
                 axisMaximum = 256f
+                axisMinimum = -256f
                 setDrawGridLines(false)
             }
             chart.axisRight.apply {
                 setDrawAxisLine(false)
                 axisMaximum = 256f
+                axisMinimum = -256f
                 setDrawGridLines(false)
             }
             chart.xAxis.apply {
@@ -60,6 +72,18 @@ class RecordFragment : Fragment() {
             chart.legend.isEnabled = false
             chart.isClickable = false
             chart.isEnabled = false
+
+            if (navArgs.recordId > -1) {
+                slider2.isEnabled = false
+                recordButton.text = "Play"
+            }
+            button.setOnTouchListener { _, event ->
+                when(event.action){
+                    MotionEvent.ACTION_UP -> viewModel.pulseDown()
+                    MotionEvent.ACTION_DOWN -> viewModel.pulseUp()
+                }
+                false
+            }
         }
 
         viewModel.fileUri = Uri.parse(navArgs.musicFileUri)

@@ -19,10 +19,10 @@ class IntensityRecord(
     val trackInfo: MusicFileInfo,
     val recordedDataUri: String
 ) {
-    @Ignore var data: List<Pair<Int, Int>> = emptyList()
+    @PrimaryKey(autoGenerate = true)
+    var id: Int = 0
 
-    @PrimaryKey
-    var id: Int = -1
+    @Ignore var data: List<Pair<Int, Int>> = emptyList()
 
     fun loadData() {
         val stream = ObjectInputStream(File(recordedDataUri).inputStream())
@@ -32,6 +32,8 @@ class IntensityRecord(
     fun saveData() {
         val stream = ObjectOutputStream(File(recordedDataUri).outputStream())
         stream.writeObject(data)
+        stream.flush()
+        stream.close()
     }
 }
 

@@ -70,5 +70,7 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.4.0-alpha02'
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
     implementation 'com.squareup.picasso:picasso:2.71828'
-
-}
+    implementation 'no.nordicsemi.android:ble-common:2.2.4'
+    implementation 'no.nordicsemi.android:ble-livedata:2.2.4'
+    implementation 'no.nordicsemi.android.support.v18:scanner:1.4.3'
+    implementation 'no.nordicsemi.android:log:2.2.0'}

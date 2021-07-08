@@ -54,8 +54,8 @@ open class MotorBLEManager @Inject constructor(@ApplicationContext context: Cont
 
     override fun getGattCallback() = MotorBLEManagerGattCallback()
 
-    fun setMotorSpeed(speed: Byte) {
+    fun setMotorSpeed(speed: Int) {
         log(Log.VERBOSE, "Mot speed set to $speed}")
-        writeCharacteristic(motorCharacteristic, BLEMotor.setSpeed(speed)).enqueue()
+        writeCharacteristic(motorCharacteristic, BLEMotor.setSpeed(speed)).await()
     }
 }

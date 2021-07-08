@@ -9,7 +9,7 @@ import ru.mrlargha.thenightingale.data.models.IntensityRecord
 
 @Database(
     entities = [IntensityRecord::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class MusicDatabase : RoomDatabase() {

@@ -12,13 +12,21 @@
         tools:layout="@layout/fragment_home">
         <action
             android:id="@+id/action_navigation_home_to_recordFragment"
-            app:destination="@id/recordFragment" />
+            app:destination="@id/recordFragment" >
+            <argument
+                android:name="recordId"
+                android:defaultValue="-1" />
+        </action>
     </fragment>
     <fragment
         android:id="@+id/navigation_records"
         android:name="ru.mrlargha.thenightingale.ui.records.RecordsFragment"
         android:label="Records"
-        tools:layout="@layout/fragment_records" />
+        tools:layout="@layout/fragment_records" >
+        <action
+            android:id="@+id/action_navigation_records_to_recordFragment"
+            app:destination="@id/recordFragment" />
+    </fragment>
     <fragment
         android:id="@+id/navigation_bluetooth"
         android:name="ru.mrlargha.thenightingale.ui.bluetooth.BluetoothSetupFragment"
@@ -32,6 +40,9 @@
         <argument
             android:name="musicFileUri"
             app:argType="string" />
+        <argument
+            android:name="recordId"
+            app:argType="integer" />
     </fragment>
 
 </navigation>

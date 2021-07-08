@@ -12,5 +12,8 @@ interface IntensityRecordDao {
     fun insertRecord(record: IntensityRecord)
 
     @Query("SELECT * FROM records")
-    fun getRecords(): List<IntensityRecord>
+    fun getRecords(): LiveData<List<IntensityRecord>>
+
+    @Query("SELECT * FROM records")
+    fun getRecordsSync(): List<IntensityRecord>
 }

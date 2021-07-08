@@ -1,7 +1,6 @@
 package ru.mrlargha.thenightingale.ui.home
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +9,7 @@ import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import ru.mrlargha.thenightingale.databinding.FragmentHomeBinding
+import ru.mrlargha.thenightingale.ui.MusicFileAdapter
 
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
